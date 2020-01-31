@@ -1,11 +1,12 @@
-from tkinter import *
-from tkinter import ttk, font, filedialog, messagebox, simpledialog
-import tkinter.scrolledtext as ScrolledText
 import os
-import pandas as pd
-import subprocess
+import time
+import tkinter.scrolledtext as ScrolledText
+from tkinter import *
+from tkinter import filedialog, messagebox, simpledialog
 
-# from process import run_subprocess
+import pandas as pd
+
+import builtin.preferences
 
 dirpath = os.path.dirname(os.path.realpath(__file__))
 
@@ -27,16 +28,14 @@ class Application:
 
         self.current_file = [None, False]
 
-        # set the title
+        # set options (title, geometry, icon)
         self.root.title('Text Editor - New Document')
-
         self.root.geometry('1080x720')
-
         self.root.iconbitmap(dirpath + '\\icon-1.ico')
 
-        # defines the text to write
-        self.text = ScrolledText.ScrolledText(self.root, width=120, height=80, pady=20, padx=20, tabs=36)
-        self.text.pack(expand=YES, fill=Y)
+        # text area to code / write
+        self.text = ScrolledText.ScrolledText(self.root, width=120, height=80, pady=20, padx=10, tabs=36, font=('Arial', '10'))
+        self.text.pack(expand=YES, fill=BOTH)
 
         # set the menus
         self.menubar = Menu(self.root)
@@ -50,7 +49,7 @@ class Application:
         pd_menu.add_command(label='Max value', command=self.max_csv)
         pd_menu.add_command(label='Min value', command=self.min_csv)
 
-        runmenu = Menu(self.menubar)
+        runmenu = Menu(self.menubar, tearoff=False)
         runmenu.add_command(label='Run Code', command=self.run_without_saving)
         runmenu.add_command(label='Save and run', command=self.run)
         terminal.add_cascade(label='Run', menu=runmenu)
@@ -62,10 +61,12 @@ class Application:
         filemenu.add_command(label='New File', command=self.new_file)
         filemenu.add_command(label='Open File', command=self.open_file)
 
-        savemenu = Menu(self.menubar)
+        savemenu = Menu(self.menubar, tearoff=False)
         savemenu.add_command(label='Save', command=self.save)
         savemenu.add_command(label='Save as', command=self.save_file)
         filemenu.add_cascade(label='Save', menu=savemenu)
+        filemenu.add_command(label='Preferences',
+                             command=lambda: builtin.preferences.preferences(self.root, [self.text]))
 
         filemenu.add_separator()
         filemenu.add_command(label='Exit', command=quit)
@@ -98,13 +99,23 @@ class Application:
         Runs code without saving the file
         """
 
-        location_path = dirpath + '\\process\\run_process.py'
+        location_path = r'process\run_process.py'
 
         if len(self.text.get('1.0', END)) > 1:
+
+            f = open(location_path, 'w').close()
+
+            f = open(r"process\model.txt", 'r')
+            content = f.readlines()
+            f.close()
+            content.insert(8, ''.join(map(lambda x: '\n' + ' ' * 8 + x, self.text.get('1.0', END).splitlines())))
+            content = ''.join(content)
+
             f = open(location_path, 'w')
-            f.write(self.text.get('1.0', END) + '\ninput()')
+            f.write(content)
             f.close()
             os.system(f'start python {location_path}')
+
         else:
             label = messagebox.showinfo('Warning', 'Please write a longer code.')
 
@@ -145,8 +156,8 @@ class Application:
                     new_title = self.current_file[0].split('/').pop()
                     self.root.title('Text Editor - ' + new_title)
                     self.current_file[1] = True
+
                 except:
-                    raise
                     print('Something went wrong saving your file!')
 
                 finally:
@@ -177,6 +188,12 @@ class Application:
                 f.write(self.text.get('1.0', END))
                 f.close()
 
+                new_title = self.current_file[0].split('/')[-1]
+
+                self.root.title('Saving...')
+                time.sleep(1.5)
+                self.root.title('Text Editor - ' + new_title)
+
     def save_file(self):
         """
         Saves file
@@ -194,9 +211,11 @@ class Application:
 
             if check == len(str(self.text.get('1.0', END))):
                 new_title = self.savefile.split('/').pop()
-                self.root.title('Text Editor - ' + new_title)
                 self.current_file = [self.savefile, True]
                 self.extension = self.savefile.split('/')[-1].split('.')[-1]
+                self.root.title('Saving...')
+                time.sleep(1.5)
+                self.root.title('Text Editor - ' + new_title)
 
         except:
             print('Something went wrong saving your file!')
@@ -376,10 +395,9 @@ class Application:
 
         else:
             if find.lower() in textData.lower():
-                messagebox.showinfo('Search Succeful', f'We could found it:{find}')
+                messagebox.showinfo('Search Successful', f'We could found it:{find}')
             else:
                 label = messagebox.showinfo("Find Error", "We can found it!")
 
 
-if __name__ == "__main__":
-    app = Application()
+app = Application()
