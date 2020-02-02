@@ -7,7 +7,7 @@ def create_debug() -> None:
     current_date = datetime.datetime.now()
 
 
-        Desde sopa con fideos hasta tu gfa en xvideos    try:
+    try:
         # THE CODE GOES HERE
 
         input()
